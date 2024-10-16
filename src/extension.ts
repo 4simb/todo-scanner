@@ -19,6 +19,21 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 function scanDirectory(dir: string) {
+	const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+
+	if (!workspaceFolder) {
+		vscode.window.showErrorMessage('No workspace folder found.');
+		return;
+	}
+
+	const output_file_path = path.join(workspaceFolder.uri.fsPath, 'TODO list.txt');
+	fs.writeFile(output_file_path, 'Current TODO list:\n', (err) => {
+		if (err) {
+			vscode.window.showErrorMessage('Error writing file: ' + err.message);
+			return;
+		}
+	});
+
     fs.readdir(dir, (err, files) => {
         if (err) {
             vscode.window.showErrorMessage(`Error reading directory: ${err.message}`);
@@ -27,17 +42,17 @@ function scanDirectory(dir: string) {
 
         files.forEach(file => {
 			if (file !== 'TODO list.txt'){
-				const filePath = path.join(dir, file);
-				fs.stat(filePath, (err, stats) => {
+				const file_path = path.join(dir, file);
+				fs.stat(file_path, (err, stats) => {
 					if (err) {
 						vscode.window.showErrorMessage(`Error getting stats for file: ${err.message}`);
 						return;
 					}
 
 					if (stats.isDirectory()) {
-						scanDirectory(filePath); // Recursively scan subdirectories
+						scanDirectory(file_path);
 					} else if (stats.isFile()) {
-						scanFile(filePath);
+						scanFile(file_path);
 					}
 				});
 			}
@@ -45,8 +60,8 @@ function scanDirectory(dir: string) {
     });
 }
 
-function scanFile(filePath: string) {
-    fs.readFile(filePath, 'utf8', (err, data) => {
+function scanFile(file_path: string) {
+    fs.readFile(file_path, 'utf8', (err, data) => {
         if (err) {
             vscode.window.showErrorMessage(`Error reading file: ${err.message}`);
             return;
@@ -73,9 +88,6 @@ function scanFile(filePath: string) {
 }
 
 function WriteToFile(file_path: string, lines: string[]){
-	// const fileName = 'TODO list.txt';
-	// /const content = 'Hello, this is a sample text!'; // Customize the content
-
 	const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
 
 	if (!workspaceFolder) {
@@ -83,19 +95,11 @@ function WriteToFile(file_path: string, lines: string[]){
 		return;
 	}
 
-	// Construct the full file path
-
-	const filePath = path.join(workspaceFolder.uri.fsPath, file_path);
-	fs.writeFile(filePath, 'Current TODO list:\n', (err) => {
-		if (err) {
-			vscode.window.showErrorMessage('Error writing file: ' + err.message);
-			return;
-		}
-	});
+	const output_file_path = path.join(workspaceFolder.uri.fsPath, file_path);
 
 	for(let i = 0; i < lines.length; i++){
 		console.log(lines[i]);
-		fs.appendFile(filePath, (i+1).toString() + ' ' + lines[i] + '\n', (err) => {
+		fs.appendFile(output_file_path, lines[i] + '\n', (err) => {
 			if (err) {
 				vscode.window.showErrorMessage('Error writing file: ' + err.message);
 				return;
@@ -104,7 +108,7 @@ function WriteToFile(file_path: string, lines: string[]){
 		
 	}
 
-	vscode.workspace.openTextDocument(filePath).then((document) => {
+	vscode.workspace.openTextDocument(output_file_path).then((document) => {
 		vscode.window.showTextDocument(document);
 	}, (error) => {
 		vscode.window.showErrorMessage('Error opening file: ' + error.message);
