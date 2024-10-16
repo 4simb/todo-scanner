@@ -1,0 +1,7 @@
+# vscode files
+.vscode/
+.vscodeignore
+
+
+# nodes files
+node_modules/
