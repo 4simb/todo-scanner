@@ -72,22 +72,24 @@ function scanFile(file_path: string) {
 			let index = line.indexOf('TODO:');
 			return line.substring(index);
 		})
+		
+		let line_indexes: number[] = [];
+		for(let i = 0; i < lines.length; i++){
+			if(lines[i].includes('TODO:')){
+				line_indexes.push(i + 1);
+			}
+		}
+
         if (todo_lines.length === 0) {
             vscode.window.showInformationMessage('No TODOs found.');
             return;
         }
-		
 
-		WriteToFile('TODO list.txt', todo_lines)
-		
-
-		todo_lines.forEach(line => {
-			console.log(line)
-		});
+		WriteToFile('TODO list.txt', todo_lines, line_indexes, file_path)
     });
 }
 
-function WriteToFile(file_path: string, lines: string[]){
+function WriteToFile(file_path: string, lines: string[], line_inds: number[], input_file_path: string){
 	const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
 
 	if (!workspaceFolder) {
@@ -97,15 +99,13 @@ function WriteToFile(file_path: string, lines: string[]){
 
 	const output_file_path = path.join(workspaceFolder.uri.fsPath, file_path);
 
+	console.log('\n' + input_file_path + ':\n');
+	fs.appendFileSync(output_file_path, '\n' + input_file_path + ':\n');
+
 	for(let i = 0; i < lines.length; i++){
-		console.log(lines[i]);
-		fs.appendFile(output_file_path, lines[i] + '\n', (err) => {
-			if (err) {
-				vscode.window.showErrorMessage('Error writing file: ' + err.message);
-				return;
-			}
-		});
-		
+		let line = 'Line #' + line_inds[i] + ': ' + lines[i] + '\n';
+		console.log(line);
+		fs.appendFileSync(output_file_path, line);		
 	}
 
 	vscode.workspace.openTextDocument(output_file_path).then((document) => {
